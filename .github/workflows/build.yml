@@ -1,69 +1,65 @@
-name: Build Android APK
-
-on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+name: Build Godot APK
+on: [push]
 
 jobs:
-  build-android:
+  build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Cache Godot files
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.local/share/godot
-            ~/.config/godot
-          key: godot-cache-${{ hashFiles('project.godot') }}
-
-      - name: Download and config Godot Engine Linux server and templates
+      - name: Download Godot & Export Templates
         run: |
-          # استخدام الإصدار الرسمي المطابق تماماً لرسالة الخطأ لديك
-          VERSION_TAG="4.7.1.stable"
-          
-          wget https://github.com/godotengine/godot/releases/download/${VERSION_TAG}/Godot_v${VERSION_TAG}_linux.x86_64.zip
-          wget https://github.com/godotengine/godot/releases/download/${VERSION_TAG}/Godot_v${VERSION_TAG}_export_templates.tpz
-          
-          unzip Godot_v${VERSION_TAG}_linux.x86_64.zip
-          mv Godot_v${VERSION_TAG}_linux.x86_64 /usr/local/bin/godot
-          
-          # إنشاء المسار الصحيح تماماً ونقل القوالب إليه دون أخطاء
-          mkdir -p ~/.local/share/godot/export_templates/${VERSION_TAG}
-          unzip Godot_v${VERSION_TAG}_export_templates.tpz
-          
-          # التعامل مع المجلد الناتج لفك الضغط ونقل محتوياته للمسار الصحيح
-          mv -f export_templates/* ~/.local/share/godot/export_templates/${VERSION_TAG}/ || mv -f templates/* ~/.local/share/godot/export_templates/${VERSION_TAG}/ || true
-          
-          rm -f Godot_v${VERSION_TAG}_linux.x86_64.zip Godot_v${VERSION_TAG}_export_templates.tpz
+          curl -L -o godot.zip https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip
+          unzip -q godot.zip
+          mv Godot_v4.3-stable_linux.x86_64 godot
 
-      - name: Open project once to import assets and templates
+          curl -L -o templates.tpz https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz
+          mkdir -p temp_templates
+          unzip -q templates.tpz -d temp_templates
+          
+          mkdir -p ~/.local/share/godot/export_templates/4.3.stable
+          find temp_templates -type f -exec mv {} ~/.local/share/godot/export_templates/4.3.stable/ \;
+          rm -rf temp_templates
+
+      - name: Find Project and Export APK
         run: |
-          timeout 120 godot --headless --path . --editor --quit || true
+          PROJECT_FILE=$(find . -name "project.godot" | head -n 1)
+          
+          if [ -z "$PROJECT_FILE" ]; then
+            echo "خطأ: لم يتم العثور على ملف project.godot!"
+            exit 1
+          fi
 
-      - name: Create export directory
-        run: mkdir -p build/android
+          PROJECT_DIR=$(dirname "$PROJECT_FILE")
+          echo "تم العثور على المشروع في المجلد: $PROJECT_DIR"
 
-      - name: Export Android APK
-        run: |
-          godot --headless --path . --export-release "Android" build/android/app-release.apk
+          mkdir -p "$PROJECT_DIR/.godot/editor"
+          ABS_BUILD_DIR="$(pwd)/build"
+          mkdir -p "$ABS_BUILD_DIR"
 
-      - name: Upload APK
+          echo "[preset.0]" > "$PROJECT_DIR/export_presets.cfg"
+          echo 'name="Android"' >> "$PROJECT_DIR/export_presets.cfg"
+          echo 'platform="Android"' >> "$PROJECT_DIR/export_presets.cfg"
+          echo 'runnable=true' >> "$PROJECT_DIR/export_presets.cfg"
+          echo 'custom_features=""' >> "$PROJECT_DIR/export_presets.cfg"
+          echo 'export_filter="all_resources"' >> "$PROJECT_DIR/export_presets.cfg"
+          echo 'include_filter=""' >> "$PROJECT_DIR/export_presets.cfg"
+          echo 'exclude_filter="res://addons/AdmobPlugin/*,res://gdscript/sample/*"' >> "$PROJECT_DIR/export_presets.cfg"
+          echo 'export_path="game.apk"' >> "$PROJECT_DIR/export_presets.cfg"
+          echo 'encryption_include_filters=""' >> "$PROJECT_DIR/export_presets.cfg"
+          echo 'encryption_exclude_filters=""' >> "$PROJECT_DIR/export_presets.cfg"
+          echo 'encrypt_pck=false' >> "$PROJECT_DIR/export_presets.cfg"
+          echo 'encrypt_directory=false' >> "$PROJECT_DIR/export_presets.cfg"
+          echo "" >> "$PROJECT_DIR/export_presets.cfg"
+          echo "[preset.0.options]" >> "$PROJECT_DIR/export_presets.cfg"
+          echo 'custom_template/debug=""' >> "$PROJECT_DIR/export_presets.cfg"
+          echo 'custom_template/release=""' >> "$PROJECT_DIR/export_presets.cfg"
+
+          chmod -R 777 .
+          ./godot --path "$PROJECT_DIR" --headless --export-debug "Android" "$ABS_BUILD_DIR/game.apk"
+
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: android-apk
-          path: build/android/app-release.apk
+          name: game-apk
+          path: build/game.apk
