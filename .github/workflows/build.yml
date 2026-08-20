@@ -33,20 +33,23 @@ jobs:
 
       - name: Download and config Godot Engine Linux server and templates
         run: |
-          GODOT_VERSION=4.7.1-stable
-          DOWNLOAD_NAME=Godot_v${GODOT_VERSION}_linux.x86_64
-          TEMPLATES_NAME=Godot_v${GODOT_VERSION}_export_templates.tpz
+          # استخدام الإصدار الرسمي المطابق تماماً لرسالة الخطأ لديك
+          VERSION_TAG="4.7.1.stable"
           
-          wget https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/${DOWNLOAD_NAME}.zip
-          wget https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/${TEMPLATES_NAME}
+          wget https://github.com/godotengine/godot/releases/download/${VERSION_TAG}/Godot_v${VERSION_TAG}_linux.x86_64.zip
+          wget https://github.com/godotengine/godot/releases/download/${VERSION_TAG}/Godot_v${VERSION_TAG}_export_templates.tpz
           
-          unzip ${DOWNLOAD_NAME}.zip
-          mv ${DOWNLOAD_NAME} /usr/local/bin/godot
+          unzip Godot_v${VERSION_TAG}_linux.x86_64.zip
+          mv Godot_v${VERSION_TAG}_linux.x86_64 /usr/local/bin/godot
           
-          mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}
-          unzip ${TEMPLATES_NAME}
-          mv templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}/
-          rm -f ${DOWNLOAD_NAME}.zip ${TEMPLATES_NAME}
+          # إنشاء المسار الصحيح تماماً ونقل القوالب إليه دون أخطاء
+          mkdir -p ~/.local/share/godot/export_templates/${VERSION_TAG}
+          unzip Godot_v${VERSION_TAG}_export_templates.tpz
+          
+          # التعامل مع المجلد الناتج لفك الضغط ونقل محتوياته للمسار الصحيح
+          mv -f export_templates/* ~/.local/share/godot/export_templates/${VERSION_TAG}/ || mv -f templates/* ~/.local/share/godot/export_templates/${VERSION_TAG}/ || true
+          
+          rm -f Godot_v${VERSION_TAG}_linux.x86_64.zip Godot_v${VERSION_TAG}_export_templates.tpz
 
       - name: Open project once to import assets and templates
         run: |
