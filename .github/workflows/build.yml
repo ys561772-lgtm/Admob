@@ -33,17 +33,20 @@ jobs:
 
       - name: Download and config Godot Engine Linux server and templates
         run: |
-          GODOT_VERSION=4.7-stable # تأكد من مطابقة إصدار جودوت لديك
-          wget https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip
-          wget https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_export_templates.tpz
+          GODOT_VERSION=4.7.1-stable
+          DOWNLOAD_NAME=Godot_v${GODOT_VERSION}_linux.x86_64
+          TEMPLATES_NAME=Godot_v${GODOT_VERSION}_export_templates.tpz
           
-          unzip Godot_v${GODOT_VERSION}_linux.x86_64.zip
-          mv Godot_v${GODOT_VERSION}_linux.x86_64 /usr/local/bin/godot
+          wget https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/${DOWNLOAD_NAME}.zip
+          wget https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/${TEMPLATES_NAME}
+          
+          unzip ${DOWNLOAD_NAME}.zip
+          mv ${DOWNLOAD_NAME} /usr/local/bin/godot
           
           mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}
-          unzip Godot_v${GODOT_VERSION}_export_templates.tpz
+          unzip ${TEMPLATES_NAME}
           mv templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}/
-          rm -f Godot_v${GODOT_VERSION}_linux.x86_64.zip Godot_v${GODOT_VERSION}_export_templates.tpz
+          rm -f ${DOWNLOAD_NAME}.zip ${TEMPLATES_NAME}
 
       - name: Open project once to import assets and templates
         run: |
