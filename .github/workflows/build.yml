@@ -1,31 +1,63 @@
 name: Build Android APK
 
 on:
-  workflow_dispatch:
   push:
-    branches: [ "main", "master" ]
-
-permissions:
-  contents: read
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
 
 jobs:
   build-android:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build Godot Android APK
-        uses: dulvui/godot-android-export@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
         with:
-          godot-version: 4.7.1
-          godot-channel: stable
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Cache Godot files
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.local/share/godot
+            ~/.config/godot
+          key: godot-cache-${{ hashFiles('project.godot') }}
+
+      - name: Download and config Godot Engine Linux server and templates
+        run: |
+          GODOT_VERSION=4.7.1.stable # تأكد من مطابقة إصدار جودوت لديك
+          wget https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip
+          wget https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_export_templates.tpz
+          
+          unzip Godot_v${GODOT_VERSION}_linux.x86_64.zip
+          mv Godot_v${GODOT_VERSION}_linux.x86_64 /usr/local/bin/godot
+          
+          mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}
+          unzip Godot_v${GODOT_VERSION}_export_templates.tpz
+          mv templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}/
+          rm -f Godot_v${GODOT_VERSION}_linux.x86_64.zip Godot_v${GODOT_VERSION}_export_templates.tpz
+
+      - name: Open project once to import assets and templates
+        run: |
+          timeout 120 godot --headless --path . --editor --quit || true
+
+      - name: Create export directory
+        run: mkdir -p build/android
+
+      - name: Export Android APK
+        run: |
+          godot --headless --path . --export-release "Android" build/android/app-release.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MetroDash-Android-APK
-          path: build/*.apk
-          if-no-files-found: error
-          retention-days: 30
+          name: android-apk
+          path: build/android/app-release.apk
