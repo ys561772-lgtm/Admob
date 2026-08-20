@@ -1,0 +1,30 @@
+; Engine configuration file.
+; Clean Godot 4.7 AdMob starter project.
+
+config_version=5
+
+[application]
+
+config/name="AdMob Starter"
+run/main_scene="res://Main.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[display]
+
+window/size/viewport_width=720
+window/size/viewport_height=1600
+window/stretch/mode="canvas_items"
+window/handheld/orientation=1
+
+[admob]
+
+general/android/enabled=true
+general/android/app_id="ca-app-pub-3940256099942544~3347511713"
+general/ios/enabled=true
+general/ios/app_id="ca-app-pub-3940256099942544~1458002511"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
