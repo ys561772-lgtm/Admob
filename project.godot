@@ -10,6 +10,10 @@ run/main_scene="res://Main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
+[rendering]
+
+textures/vram_compression/import_etc2_astc=true
+
 [display]
 
 window/size/viewport_width=720
