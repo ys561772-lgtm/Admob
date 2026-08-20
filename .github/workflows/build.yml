@@ -33,7 +33,7 @@ jobs:
 
       - name: Download and config Godot Engine Linux server and templates
         run: |
-          GODOT_VERSION=4.7.1.stable # تأكد من مطابقة إصدار جودوت لديك
+          GODOT_VERSION=4.3.0.stable # تأكد من مطابقة إصدار جودوت لديك
           wget https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip
           wget https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_export_templates.tpz
           
