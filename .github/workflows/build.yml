@@ -24,39 +24,36 @@ jobs:
       - name: Find Project and Export APK
         run: |
           PROJECT_FILE=$(find . -name "project.godot" | head -n 1)
-          
-          if [ -z "$PROJECT_FILE" ]; then
-            echo "خطأ: لم يتم العثور على ملف project.godot!"
-            exit 1
-          fi
-
+          if [ -z "$PROJECT_FILE" ]; then exit 1; fi
           PROJECT_DIR=$(dirname "$PROJECT_FILE")
-          echo "تم العثور على المشروع في المجلد: $PROJECT_DIR"
 
           mkdir -p "$PROJECT_DIR/.godot/editor"
           ABS_BUILD_DIR="$(pwd)/build"
           mkdir -p "$ABS_BUILD_DIR"
 
+          # كتابة إعدادات التصدير مع دعم التوقيع و الـ Custom Build
           echo "[preset.0]" > "$PROJECT_DIR/export_presets.cfg"
           echo 'name="Android"' >> "$PROJECT_DIR/export_presets.cfg"
           echo 'platform="Android"' >> "$PROJECT_DIR/export_presets.cfg"
           echo 'runnable=true' >> "$PROJECT_DIR/export_presets.cfg"
           echo 'custom_features=""' >> "$PROJECT_DIR/export_presets.cfg"
           echo 'export_filter="all_resources"' >> "$PROJECT_DIR/export_presets.cfg"
-          echo 'include_filter=""' >> "$PROJECT_DIR/export_presets.cfg"
-          echo 'exclude_filter="res://addons/AdmobPlugin/*,res://gdscript/sample/*"' >> "$PROJECT_DIR/export_presets.cfg"
           echo 'export_path="game.apk"' >> "$PROJECT_DIR/export_presets.cfg"
-          echo 'encryption_include_filters=""' >> "$PROJECT_DIR/export_presets.cfg"
-          echo 'encryption_exclude_filters=""' >> "$PROJECT_DIR/export_presets.cfg"
-          echo 'encrypt_pck=false' >> "$PROJECT_DIR/export_presets.cfg"
-          echo 'encrypt_directory=false' >> "$PROJECT_DIR/export_presets.cfg"
           echo "" >> "$PROJECT_DIR/export_presets.cfg"
           echo "[preset.0.options]" >> "$PROJECT_DIR/export_presets.cfg"
           echo 'custom_template/debug=""' >> "$PROJECT_DIR/export_presets.cfg"
           echo 'custom_template/release=""' >> "$PROJECT_DIR/export_presets.cfg"
+          echo 'gradle_build/use_custom_build=true' >> "$PROJECT_DIR/export_presets.cfg"
+          echo 'keystore/debug="/home/runner/.android/debug.keystore"' >> "$PROJECT_DIR/export_presets.cfg"
+          echo 'keystore/debug_user="androiddebugkey"' >> "$PROJECT_DIR/export_presets.cfg"
+          echo 'keystore/debug_password="android"' >> "$PROJECT_DIR/export_presets.cfg"
+
+          # إنشاء Keystore افتراضي للتوقيع
+          mkdir -p /home/runner/.android
+          keytool -genkey -v -keystore /home/runner/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
           chmod -R 777 .
-          ./godot --path "$PROJECT_DIR" --headless --export-debug "Android" "$ABS_BUILD_DIR/game.apk"
+          ./godot --path "$PROJECT_DIR" --headless --export-release "Android" "$ABS_BUILD_DIR/game.apk"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
